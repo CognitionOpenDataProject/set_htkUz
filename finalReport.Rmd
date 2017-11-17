@@ -8,8 +8,11 @@ output:
 
 #### Article ID: htkUz
 #### Pilot: Psych_MJ
-#### Start date: 03/01/2017
-#### End date: 04/04/2017 
+#### Copilot: Maya Mathur
+#### Start date: Mar 1 2017
+#### End date: Nov 8 2017
+#### Final verification: Tom Hardwicke
+#### Date: Nov 17 2017
 
 -------
 
@@ -27,6 +30,9 @@ The experiment has three between subject conditions: age (7.5 vs. 8.5-month-olds
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+
+# prepare an empty report object, we will update this each time we run compareValues2()
+reportObject <- data.frame("Article_ID" = NA, "valuesChecked" = 0, "eyeballs" = 0, "Total_df" = 0, "Total_p" = 0, "Total_mean" = 0, "Total_sd" = 0, "Total_se" = 0, "Total_ci" = 0, "Total_bf" = 0, "Total_t" = 0, "Total_F" = 0, "Total_es" = 0, "Total_median" = 0, "Total_irr" = 0, "Total_r" = 0, "Total_z" = 0, "Total_coeff" = 0, "Total_n" = 0, "Total_x2" = 0, "Total_other" = 0, "Insufficient_Information_Errors" = 0, "Decision_Errors" = 0, "Major_Numerical_Errors" = 0, "Minor_Numerical_Errors" = 0, "Major_df" = 0, "Major_p" = 0, "Major_mean" = 0, "Major_sd" = 0, "Major_se" = 0, "Major_ci" = 0, "Major_bf" = 0, "Major_t" = 0, "Major_F" = 0, "Major_es" = 0, "Major_median" = 0, "Major_irr" = 0, "Major_r" = 0, "Major_z" = 0, "Major_coeff" = 0, "Major_n" = 0, "Major_x2" = 0, "Major_other" = 0, "affectsConclusion" = NA, "error_typo" = 0, "error_specification" = 0, "error_analysis" = 0, "error_data" = 0, "error_unidentified" = 0, "Author_Assistance" = NA, "resolved_typo" = 0, "resolved_specification" = 0, "resolved_analysis" = 0, "resolved_data" = 0, "correctionSuggested" = NA, "correctionPublished" = NA)
 ```
 
 ## Step 1: Load packages
@@ -43,11 +49,11 @@ library(lsr) # to calculate eta squared
 
 ## Step 2: Load data
 
-The original excel data file is extremely clean and clear to understand. However, it is not in a tidy format or any format that can be directly used to check for reliability. Authors have provided the data in a format that fascilitates undestanding the data and the relevant statistics but makes it hard to reproduce the analyses using R. You can see a screenshot of the original data file below.  
+The original excel data file is extremely clean and clear to understand. However, it is not in a tidy format or any format that can be directly imported into a statistics program. You can see a screenshot of the original data file below.  
 
-![](./data/original_data.png) 
+![](data/original_data.png) 
 
-I created a long data file by manually cleaning the original data file. The new file has three extra columns: experiment (main vs. control), condition (side vs. middle), and age in months (7.5 vs 8.5). The blocks of data have 5 columns each. I stacked them according to their experiment type, condition, and age, and created a tidy csv file.
+I manually restructed the original data file so it can be imported into R in long format (data_manualclean.csv). The new file has three extra columns: experiment (main vs. control), condition (side vs. middle), and age in months (7.5 vs 8.5). The blocks of data have 5 columns each. I stacked them according to their experiment type, condition, and age, and created a tidy csv file.
 
 ## Step 3: Tidy data
 
@@ -59,91 +65,129 @@ head(cleaned_data)
 
 ## Step 4: Run analysis
 
-<!-- ### Pre-processing -->
-
-<!-- [you can remove this section if no pre-processing is required] -->
-
-<!-- ```{r} -->
-<!-- ``` -->
-
 ### Descriptive statistics
 
 The table below summarizes the descriptive statistics reported in the paper.
 
-![](./table_1.png) 
+![](images/table_1.png) 
 
 The code below reproduces all the reported statistics of Table 1 successfully (16 matches).
 
 ```{r}
-table_1 <-
+table1 <-
 cleaned_data %>%
   group_by(experiment, age_months, condition, event) %>%
-  summarise(LT_mean = mean(LT), st_dev=sd(LT))
+  summarise(LT_mean = mean(LT), LT_sd=sd(LT))
 
-kable(table_1, digits = 1)
+kable(table1, digits = 1)
 
 
-##### Compare Values (MM) #####
+##### Compare Values #####
 
-# define a vectorized compareValues
-# so we can do means and SDs together
-cV = Vectorize( compareValues, vectorize.args = c("reportedValue", "obtainedValue") )
-
-# means and SDs in the order they appear in paper
+# check means and SDs in the order they appear in paper
 # column 1
-cV( reportedValue = c(44.4, 12),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "7.5" & table_1$condition == "side" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'side', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'side', event == 'wide-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(45.5, 12.4),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "7.5" & table_1$condition == "middle" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "44.4", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "12", obtainedValue = sd, valueType = 'sd')
 
-cV( reportedValue = c(39.7, 19.4),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "7.5" & table_1$condition == "side" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'middle', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'middle', event == 'wide-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(34.7, 13.5,
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "7.5" & table_1$condition == "middle" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "45.5", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "12.4", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'side', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'side', event == 'wide-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "39.7", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "19.4", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'middle', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'middle', event == 'wide-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "34.7", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "13.5", obtainedValue = sd, valueType = 'sd')
 
 # column 2
-cV( reportedValue = c(25.9, 14.8),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "7.5" & table_1$condition == "side" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'side', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'side', event == 'narrow-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(24.6, 10.3),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "7.5" & table_1$condition == "middle" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "25.9", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "14.8", obtainedValue = sd, valueType = 'sd')
 
-cV( reportedValue = c(34.0, 13.1),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "7.5" & table_1$condition == "side" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '7.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(37.7, 19.0),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "7.5" & table_1$condition == "middle" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "24.6", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "10.3", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'side', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'side', event == 'narrow-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "34.0", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "13.1", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '7.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "37.7", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "19.0", obtainedValue = sd, valueType = 'sd')
 
 
 # column 3
-cV( reportedValue = c(50.8, 11.4),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "8.5" & table_1$condition == "side" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'side', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'side', event == 'wide-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(28.7, 11.1),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "8.5" & table_1$condition == "middle" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "50.8", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "11.4", obtainedValue = sd, valueType = 'sd')
 
-cV( reportedValue = c(36.8, 22.3),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "8.5" & table_1$condition == "side" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'middle', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'middle', event == 'wide-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(33.9, 17.8),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "8.5" & table_1$condition == "middle" & table_1$event == "wide-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "28.7", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "11.1", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'side', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'side', event == 'wide-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "36.8", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "22.3", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'middle', event == 'wide-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'middle', event == 'wide-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "33.9", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "17.8", obtainedValue = sd, valueType = 'sd')
+
+
 
     
 # column 4
-cV( reportedValue = c(25.3, 13.9),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "8.5" & table_1$condition == "side" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'side', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'side', event == 'narrow-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(32.6, 7.8),
-    obtainedValue = table_1[ table_1$experiment=="main" & table_1$age_months == "8.5" & table_1$condition == "middle" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "25.3", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "13.9", obtainedValue = sd, valueType = 'sd')
 
-cV( reportedValue = c(37.4, 21.7),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "8.5" & table_1$condition == "side" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+m <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'main', age_months == '8.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_sd)
 
-cV( reportedValue = c(39.8, 19.2),
-    obtainedValue = table_1[ table_1$experiment=="control" & table_1$age_months == "8.5" & table_1$condition == "middle" & table_1$event == "narrow-box", c("LT_mean", "st_dev")] )
+reportObject <- compareValues2(reportedValue = "32.6", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "7.8", obtainedValue = sd, valueType = 'sd')
 
+m <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'side', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'side', event == 'narrow-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "37.4", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "21.7", obtainedValue = sd, valueType = 'sd')
+
+m <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_mean)
+sd <- table1 %>% filter(experiment == 'control', age_months == '8.5', condition == 'middle', event == 'narrow-box') %>% pull(LT_sd)
+
+reportObject <- compareValues2(reportedValue = "39.8", obtainedValue = m, valueType = 'mean')
+reportObject <- compareValues2(reportedValue = "19.2", obtainedValue = sd, valueType = 'sd')
 ```
 
 ### Inferential statistics
@@ -160,21 +204,25 @@ model <- lm(LT ~ age_months * condition * event, data=main_data)
 anova(model)
 etaSquared(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "event", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F stat
-compareValues( reportedValue = 26.25, obtainedValue = anova(model)[[ "event", "F value"]] )
-# compareValues( reportedValue = 0.0001, obtainedValue = anova(model)[[ "event", "Pr(>F)"]], isP = TRUE )
-# the p-value matches, but due to truncation at 0.0001, compareValues classifies as major error
+reportObject <- compareValues2( reportedValue = "26.25", obtainedValue = anova(model)[[ "event", "F value"]], valueType = 'F')
 
-compareValues( reportedValue = 5.18, obtainedValue = anova(model)[[ "condition:event", "F value"]] )
-# p-value matches (same thing as above)
-# compareValues( reportedValue = 0.05, obtainedValue = anova(model)[[ "condition:event", "Pr(>F)"]], isP = TRUE )
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = anova(model)[[ "event", "Pr(>F)"]], valueType = 'p')
 
-compareValues( reportedValue = 7.13, obtainedValue = anova(model)[[ "age_months:condition:event", "F value"]] )
-# p-value matches (same thing as above)
-# compareValues( reportedValue = 0.01, obtainedValue = anova(model)[[ "age_months:condition:event", "Pr(>F)"]], isP = TRUE )
+reportObject <- compareValues2( reportedValue = "5.18", obtainedValue = anova(model)[[ "condition:event", "F value"]], valueType = 'F')
+
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = anova(model)[[ "condition:event", "Pr(>F)"]], valueType = 'p')
+
+reportObject <- compareValues2( reportedValue = "7.13", obtainedValue = anova(model)[[ "age_months:condition:event", "F value"]], valueType = 'F')
+
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = anova(model)[[ "age_months:condition:event", "Pr(>F)"]], valueType = 'p')
 
 # effect size (eta^2)
-compareValues( reportedValue = 0.11, obtainedValue = etaSquared(model)[[ "age_months:condition:event", "eta.sq.part"]] )
+reportObject <- compareValues2( reportedValue = "0.11", obtainedValue = etaSquared(model)[[ "age_months:condition:event", "eta.sq.part"]], valueType = 'es')
 ```
 
 All the significant results reported are successfully reproduced. The effect size $\eta_p^2$ is also accurately reported.
@@ -188,14 +236,18 @@ All the significant results reported are successfully reproduced. The effect siz
 model = lm(LT ~ age_months * C( main_data$condition, base = 2 ) * event, data=main_data)
 summ = summary(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "event", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F stat
-compareValues( reportedValue = 9.72, obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2 )
+reportObject <- compareValues2( reportedValue = "9.72", obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2, valueType = 'F')
 
 # yes, p < 0.005
-summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]], valueType = 'p')
 
 # Cohen's d
-compareValues( reportedValue = 1.38, obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "7.5" & main_data$condition == "side", ] ) )
+reportObject <- compareValues2( reportedValue = "1.38", obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "7.5" & main_data$condition == "side", ] ), valueType = 'es')
 
 
 #### (7.5 mos, middle, wide) - (7.5 mos, middle, narrow) #####
@@ -204,14 +256,18 @@ compareValues( reportedValue = 1.38, obtainedValue = cohensD( LT ~ event, data=m
 model <- lm(LT ~ age_months * condition * event, data=main_data)
 summ = summary(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "event", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F-stat
-compareValues( reportedValue = 12.32, obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2 )
+reportObject <- compareValues2( reportedValue = "12.32", obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2, valueType = 'F')
 
 # yes, p < 0.001
-summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]], valueType = 'p')
 
 # Cohen's d
-compareValues( reportedValue = 1.83, obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "7.5" & main_data$condition == "middle", ] ) )
+reportObject <- compareValues2( reportedValue = "1.83", obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "7.5" & main_data$condition == "middle", ] ), valueType = 'es')
 
 ```
 
@@ -225,14 +281,18 @@ compareValues( reportedValue = 1.83, obtainedValue = cohensD( LT ~ event, data=m
 model = lm(LT ~ C( main_data$age_months, base = 2 ) * C( main_data$condition, base = 2 ) * event, data=main_data)
 summ = summary(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "event", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F stat
-compareValues( reportedValue = 18.33, obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2 )
+reportObject <- compareValues2( reportedValue = "18.33", obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2, valueType = 'F')
 
 # yes, p < 0.0001
-summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "eventwide-box", "Pr(>|t|)" ]], valueType = 'p')
 
 # Cohen's d
-compareValues( reportedValue = 2.00, obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "8.5" & main_data$condition == "side", ] ) )
+reportObject <- compareValues2( reportedValue = "2.00", obtainedValue = cohensD( LT ~ event, data=main_data[ main_data$age_months == "8.5" & main_data$condition == "side", ] ), valueType = 'es')
 
 
 ##### (8.5 mos, middle, wide) - (8.5 mos, middle, narrow) #####
@@ -241,9 +301,8 @@ model <- lm(LT ~ C( main_data$age_months, base=2 ) * condition * event, data=mai
 summ = summary(model)
 
 # yes, F < 1
-summ$coefficients[[ "eventwide-box", "t value" ]]^2
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "eventwide-box", "t value" ]]^2, valueType = 'F')
 ```
-
 
 > The two age groups differed reliably in their looking times at the wide-box event in the middle-contact condition, F(1, 56) = 7.96, p < 0.01, d = 1.43, but not the side-contact condition, F(1, 56) = 1.16, p > 0.25; ...
 
@@ -253,14 +312,19 @@ summ$coefficients[[ "eventwide-box", "t value" ]]^2
 model = lm(LT ~ age_months * condition * C( main_data$event, base=2 ), data=main_data)
 summ = summary(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "age_months", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F stat
-compareValues( reportedValue = 7.96, obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2 )
+reportObject <- compareValues2( reportedValue = "7.96", obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2, valueType = 'F')
 
 # yes, p < 0.01
-summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]], valueType = 'p')
+
 
 # Cohen's d
-compareValues( reportedValue = 1.43, obtainedValue = cohensD( LT ~ age_months, data=main_data[ main_data$event == "wide-box" & main_data$condition == "middle", ] ) )
+reportObject <- compareValues2( reportedValue = "1.43", obtainedValue = cohensD( LT ~ age_months, data=main_data[ main_data$event == "wide-box" & main_data$condition == "middle", ] ), valueType = 'es')
 
 
 ##### (8.5 mos, side, narrow) - (7.5 mos, side, narrow) ######
@@ -268,11 +332,16 @@ compareValues( reportedValue = 1.43, obtainedValue = cohensD( LT ~ age_months, d
 model = lm(LT ~ age_months * C( main_data$condition, base=2 ) * C( main_data$event, base=2 ), data=main_data)
 summ = summary(model)
 
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "age_months", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
+
 # F stat
-compareValues( reportedValue = 1.16, obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2 )
+reportObject <- compareValues2( reportedValue = "1.16", obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2, valueType = 'F')
 
 # yes, p > 0.25
-summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]], valueType = 'p')
+
 ```
 
 > ... there were no significant differences for the narrow-box event, both Fs(1, 56) < 1.84, ps > 0.20.
@@ -282,27 +351,26 @@ summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]]
 model <- lm(LT ~ age_months * condition * event, data=main_data)
 summ = summary(model)
 
-# yes, less than F = 1.84 (just barely)
-summ$coefficients[[ "age_months8.5", "t value" ]]^2
+# dfs
+reportObject <- compareValues2( reportedValue = "1", obtainedValue = anova(model)[[ "age_months", "Df"]], valueType = 'df')
+reportObject <- compareValues2( reportedValue = "56", obtainedValue = anova(model)[[ "Residuals", "Df"]], valueType = 'df')
 
-#~~~~~~ P = 0.18, WHICH DOESN'T MATCH. BUT NO DECISION ERROR. 
-compareValues( reportedValue = 0.20, obtainedValue = summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]], isP = TRUE)
+# F
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2, valueType = 'F')
 
-# ~~~~~~~~~ problem with compareValues: does not understand trailing zeroes
-#compareValues( reportedValue = 0.200, obtainedValue = 0.209, isP = TRUE)
-
-
-
+# p (just under boundary - probably a rounding error)
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]], valueType = 'p')
 
 ###### (8.5, side, narrow) - (7.5, side, narrow) #####
 model <- lm(LT ~ age_months * C( main_data$condition, base=2 ) * event, data=main_data)
 summ = summary(model)
 
 # yes, less than F = 1.84
-summ$coefficients[[ "age_months8.5", "t value" ]]^2
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "t value" ]]^2, valueType = 'F')
+
 
 # yes, greater than p = 0.20
-summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]]
+reportObject <- compareValues2( reportedValue = "eyeballMATCH", obtainedValue = summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]], valueType = 'p')
 
 ```
 
@@ -310,21 +378,58 @@ summ$coefficients[[ "age_months8.5", "Pr(>|t|)" ]]
 
 ## Step 5: Conclusion
 
-This report successfully reproduced all the descriptive statistics reported in the original paper. It also successfully reproduced the ANOVA reported in the target outcome above and nearly all the planned contrasts, except that one p-value reported as being > 0.20 was actually equal to 0.18 (1 major numerical error).
-
-The data provided were easy to understand but required manual cleaning (moving columns around) to enable analysis.
+This report successfully reproduced all the descriptive statistics reported in the original paper. It also successfully reproduced the ANOVA reported in the target outcome above and all the planned contrasts. The data provided were easy to understand but required manual cleaning (moving columns around) to enable analysis.
 
 ```{r}
-codReport(Report_Type = 'copilot',
-          Article_ID = 'htkUz', 
-          Insufficient_Information_Errors = 0,
-          Decision_Errors = 0, 
-          Major_Numerical_Errors = 1, 
-          Minor_Numerical_Errors = 0)
+reportObject$Article_ID <- "htkUz"
+reportObject$affectsConclusion <- NA
+reportObject$error_typo <- 0
+reportObject$error_specification <- 0
+reportObject$error_analysis <- 0
+reportObject$error_data <- 0
+reportObject$error_unidentified <- 0
+reportObject$Author_Assistance <- F
+reportObject$resolved_typo <- 0
+reportObject$resolved_specification <- 0
+reportObject$resolved_analysis <- 0
+reportObject$resolved_data <- 0
+reportObject$correctionSuggested <- NA
+reportObject$correctionPublished <- NA
+
+# decide on final outcome
+if(reportObject$Decision_Errors > 0 | reportObject$Major_Numerical_Errors > 0 | reportObject$Insufficient_Information_Errors > 0){
+  reportObject$finalOutcome <- "Failure"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  reportObject$finalOutcome <- "Success"
+  if(reportObject$Author_Assistance == T){
+    reportObject$finalOutcome <- "Success with author assistance"
+  }
+}
+
+# save the report object
+filename <- paste0("reportObject_", reportObject$Article_ID,".csv")
+write_csv(reportObject, filename)
 ```
 
-## Package Versions
-The package versions used in this report:
+## Report Object
+
+```{r, echo = FALSE}
+# display report object in chunks
+kable(reportObject[2:10], align = 'l')
+kable(reportObject[11:20], align = 'l')
+kable(reportObject[21:25], align = 'l')
+kable(reportObject[26:30], align = 'l')
+kable(reportObject[31:35], align = 'l')
+kable(reportObject[36:40], align = 'l')
+kable(reportObject[41:45], align = 'l')
+kable(reportObject[46:51], align = 'l')
+kable(reportObject[52:57], align = 'l')
+```
+
+## Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
