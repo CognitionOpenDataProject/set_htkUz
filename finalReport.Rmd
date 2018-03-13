@@ -58,7 +58,7 @@ I manually restructed the original data file so it can be imported into R in lon
 ## Step 3: Tidy data
 
 ```{r}
-cleaned_data <- read.csv("./data/data_manualclean.csv")
+cleaned_data <- read.csv("./data/data_manualClean.csv")
 cleaned_data$age_months <- as.factor(cleaned_data$age_months)
 head(cleaned_data)
 ```
